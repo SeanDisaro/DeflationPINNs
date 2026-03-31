@@ -3,6 +3,8 @@ import deepxde as dde
 from src.architectures.DeflationPINN import two_dim_DefPINN
 from tests.deflationPINNTest.training import train
 from src.lossFunctions.LDGPINNLoss import bfunc, DCBoundaryExtension
+from src.harmonicTrapezoidalExtension import HarmonicTrapezoidExtension
+from src.molifiedTrapezoidExtension import MollifiedTrapezoidExtension
 from tests.deflationPINNTest.testing import plot_Q11_Q12, plot_nematic_director, plot_piml_Error
 import matplotlib.pyplot as plt
 from src.starDomainExtrapolation.starDomain import *
@@ -18,7 +20,6 @@ def run():
 
     squareAsStarDom = HyperCuboid(2, torch.tensor([0.5,0.5]), torch.tensor([1.,1.]))
     squareAsStarDom.updateDevice("cuda")
-
 
     # n as in n x n grid
     n = 33
@@ -42,30 +43,30 @@ def run():
 
     points.requires_grad = True
     numSolutions = 6
-    learningRate = 1e-3 
+    learningRate = 1e-4 
 
 
 
 
     deflationLossPoints = (1.,0.4) 
 
-    alpha = 0.1 
+    alpha = 0.01 
     delta = 100. 
 
-    epochs = 30
+    epochs = 10000
 
 
     
     model = two_dim_DefPINN(
                     numSolutions = numSolutions,
-                    numBranchFeatures = 16, #8# VARY THIS
+                    numBranchFeatures = 16, 
                     trunk_layer = 1,
-                    trunk_width = 4000, # VARY THIS
+                    trunk_width = 4000, 
                     activationFunction = torch.nn.Tanh(),
                     geom = geom,
                     DirichletHardConstraint = True,
                     skipConnection = False,
-                    DirichletConditionFunc1 = lambda input:  DCBoundaryExtension(squareAsStarDom,[input[:,0].view(-1,1), input[:,1].view(-1,1)], bfunc),
+                    DirichletConditionFunc1 = lambda input:  DCBoundaryExtension(squareAsStarDom,[input[:,0].view(-1,1), input[:,1].view(-1,1)], bfunc), 
                     DirichletConditionFunc2 = lambda x: torch.zeros((x.shape[0],1),device="cuda:0")
                     )
 

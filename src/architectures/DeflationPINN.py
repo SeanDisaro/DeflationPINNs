@@ -96,8 +96,8 @@ class two_dim_DefPINN(nn.Module):
 
         if self.DirichletHardConstraint:
             for idxSol in range(self.numSolutions):
-                out1[idxSol] = out1[idxSol] * self.geom.boundary_constraint_factor(x, smoothness="Cinf")*20
-                out2[idxSol] = out2[idxSol] * self.geom.boundary_constraint_factor(x, smoothness="Cinf")*10
+                out1[idxSol] = out1[idxSol] * self.geom.boundary_constraint_factor(x, smoothness="Cinf")
+                out2[idxSol] = out2[idxSol] * self.geom.boundary_constraint_factor(x, smoothness="Cinf")
                 if self.DirichletConditionFunc1 != None:
                     #out1_preHardConst.append(out1[idxSol].clone())
                     boundaryExtension1 = self.DirichletConditionFunc1(x).view(-1,1)

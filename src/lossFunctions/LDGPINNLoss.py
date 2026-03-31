@@ -130,8 +130,41 @@ def DCBoundaryExtension(starDomain,input, boundaryFunction):
 
 
 
+
 def linearRadial(x):
     return (1 - x).view(-1,1)
+
+
+
+
+def squaredRadial(x):
+    return (1 - x*x).view(-1,1)
+
+def cInfRadial(x):
+    is_zero = (x == 0)
+    
+    x_safe = torch.where(is_zero, torch.ones_like(x), x)
+
+    ln2 = torch.log(torch.tensor(2.0, device=x.device, dtype=x.dtype))
+    computed_val = 1 - 2 * torch.exp(-ln2 / x_safe)
+    
+    # 4. Final Merge: Return 1.0 where x was 0, otherwise return the computed value
+    return torch.where(is_zero, torch.ones_like(computed_val), computed_val)
+
+def smooth_transition(x):
+    mask = (x > 0) & (x < 1)
+    
+    x_safe = torch.where(mask, x, torch.tensor(0.5, device=x.device, dtype=x.dtype))
+    
+    u = (2 * x_safe - 1) / (x_safe * (1 - x_safe))
+
+    result = torch.sigmoid(-u)
+    
+
+    result = torch.where(x <= 0, torch.tensor(1.0, device=x.device, dtype=x.dtype), result)
+    result = torch.where(x >= 1, torch.tensor(0.0, device=x.device, dtype=x.dtype), result)
+    return result
+
 
 
 def bfunc(x):

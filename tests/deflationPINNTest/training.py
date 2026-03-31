@@ -14,7 +14,7 @@ import dill as pickle
 pathSavePictures = PurePath(plotFolder, "deflationPINNTest")
 
 def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints: torch.Tensor = None,
-            learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "Two_Dim_DefPINN",
+            learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "DeflationPINN",
             alpha:float = 1., beta:float = 0.1, delta:float = 1, deflationLossPoints: tuple[float,float] = (10000.,1.) , deflationCoefficient:float = 1., FrequencyReportLosses:int = 20, learningRateEpochPlotName:str = "Learning_Epoch_Plot")->Tuple[two_dim_DefPINN, list[torch.Tensor]]:
     """This is the training funciton for the DifDefONet model for the reduced 2dim LDG model. It returns the trained model and the feature list containing the solution functions, which can be used with the trained model.
 
