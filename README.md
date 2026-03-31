@@ -1,6 +1,6 @@
 # DeflationPIML
 
-This is the repository to the paper ["Deflation-PINNs: Learning Multiple Solutions for PDEs and Landau-de Gennes"]: http://arxiv.org/abs/2603.27936 in which we present a PINN and DeepONet based model to approximate multiple solutions at once for a Landau de Gennes problem from liquid crystal theory.
+This is the repository to the paper ["Deflation-PINNs: Learning Multiple Solutions for PDEs and Landau-de Gennes"](http://arxiv.org/abs/2603.27936) in which we present a PINN and DeepONet based model to approximate multiple solutions at once for a Landau de Gennes problem from liquid crystal theory.
 
 ## Installation
 Set up a python 3.12 environment.
@@ -59,7 +59,7 @@ For the evaluation of the results, check out the notebook `metricsAndPics4Paper.
 ## Cite the paper
 
 
-[Link to arXiv]: http://arxiv.org/abs/2603.27936
+[Link to arXiv](http://arxiv.org/abs/2603.27936)
 
 
 ## Team
