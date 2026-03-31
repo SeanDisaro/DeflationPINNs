@@ -60,7 +60,19 @@ For the evaluation of the results, check out the notebook `metricsAndPics4Paper.
 
 
 [Link to arXiv](http://arxiv.org/abs/2603.27936)
+BibTeX:
 
+```
+@misc{disarò2026deflationpinnslearningmultiplesolutions,
+      title={Deflation-PINNs: Learning Multiple Solutions for PDEs and Landau-de Gennes}, 
+      author={Sean Disarò and Ruma Rani Maity and Aras Bacho},
+      year={2026},
+      eprint={2603.27936},
+      archivePrefix={arXiv},
+      primaryClass={math.NA},
+      url={https://arxiv.org/abs/2603.27936}, 
+}
+```
 
 ## Team
 
