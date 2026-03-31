@@ -36,6 +36,7 @@ ________________________________________________________
 
 
 `src` contains model implementations, loss functions and the star domain extrapolation implementation for the boundary hard constraint described in the paper.
+ ```
 📦src
  ┣ 📂architectures
  ┃ ┗ 📜DeflationPINN.py
