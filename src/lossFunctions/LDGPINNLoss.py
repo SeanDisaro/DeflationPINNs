@@ -5,7 +5,7 @@ import numpy as np
 from src.starDomainExtrapolation.starDomain import *
 
 
-def pimlLoss_w_AutoGrad(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, boundaryPoints:torch.Tensor = None, modelOutBoundary:dict[list[torch.Tensor]] = None ,
+def pimlLoss_w_AutoGrad_LDG(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, boundaryPoints:torch.Tensor = None, modelOutBoundary:dict[list[torch.Tensor]] = None ,
                 eps:float = 0.02, alpha:float = 1., beta:float = 0.1):
     """Computes the PINN loss for the LDG problem from the paper. 
 

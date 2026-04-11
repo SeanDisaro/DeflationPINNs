@@ -1,11 +1,11 @@
 import torch
 import deepxde as dde
-from src.architectures.DeflationPINN import two_dim_DefPINN
-from tests.deflationPINNTest.training import train
+from src.architectures.DeflationPINN import two_dim_2_two_dim_DefPINN
+from tests.LDG.training import train
 from src.lossFunctions.LDGPINNLoss import bfunc, DCBoundaryExtension
 from src.harmonicTrapezoidalExtension import HarmonicTrapezoidExtension
 from src.molifiedTrapezoidExtension import MollifiedTrapezoidExtension
-from tests.deflationPINNTest.testing import plot_Q11_Q12, plot_nematic_director, plot_piml_Error
+from tests.LDG.testing import plot_Q11_Q12, plot_nematic_director, plot_piml_Error
 import matplotlib.pyplot as plt
 from src.starDomainExtrapolation.starDomain import *
 
@@ -57,7 +57,7 @@ def run():
 
 
     
-    model = two_dim_DefPINN(
+    model = two_dim_2_two_dim_DefPINN(
                     numSolutions = numSolutions,
                     numBranchFeatures = 16, 
                     trunk_layer = 1,

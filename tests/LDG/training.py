@@ -1,7 +1,7 @@
 import torch
 import torch.optim.adamax
-from src.lossFunctions.DeflationPINNLoss import defPINNLossPIML_w_AD
-from src.architectures.DeflationPINN import two_dim_DefPINN
+from src.lossFunctions.DeflationPINNLoss import defPINNLossPIML_w_AD_LDG
+from src.architectures.DeflationPINN import two_dim_2_two_dim_DefPINN
 from typing import Tuple
 import matplotlib.pyplot as plt
 import random
@@ -13,13 +13,13 @@ import dill as pickle
 
 pathSavePictures = PurePath(plotFolder, "deflationPINNTest")
 
-def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints: torch.Tensor = None,
+def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints: torch.Tensor = None,
             learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "DeflationPINN",
-            alpha:float = 1., beta:float = 0.1, delta:float = 1, deflationLossPoints: tuple[float,float] = (10000.,1.) , deflationCoefficient:float = 1., FrequencyReportLosses:int = 20, learningRateEpochPlotName:str = "Learning_Epoch_Plot")->Tuple[two_dim_DefPINN, list[torch.Tensor]]:
+            alpha:float = 1., beta:float = 0.1, delta:float = 1, deflationLossPoints: tuple[float,float] = (10000.,1.) , deflationCoefficient:float = 1., FrequencyReportLosses:int = 20, learningRateEpochPlotName:str = "Learning_Epoch_Plot")->two_dim_2_two_dim_DefPINN:
     """This is the training funciton for the DifDefONet model for the reduced 2dim LDG model. It returns the trained model and the feature list containing the solution functions, which can be used with the trained model.
 
     Args:
-        model (two_dim_DefPINN): Model which we want to train.
+        model (two_dim_2_two_dim_DefPINN): Model which we want to train.
         x (torch.Tensor): collocation points where we want to train the model.
         numSolutions (int): number of solutions which we want to obtain in the end
         epochs (int): Number of epochs during training.
@@ -38,7 +38,7 @@ def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
         learningRateEpochPlotName (str, optional) = Name under which we want to save the learning plot. Defaults to "Learning_Epoch_Plot".
 
     Returns:
-        Tuple[Laplacian_2D_DefDifONet, list[torch.Tensor]]: Returns trained model and feature representation of the solution funcitons.
+        Laplacian_2D_DefDifONet: Returns trained model and feature representation of the solution funcitons.
     """    
 
     optimizer = torch.optim.Adam(model.parameters(), lr = learningRate)
@@ -69,7 +69,7 @@ def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
     modelOutBoundary = None
     if useBoundaryLossTerm:
         modelOutBoundary = model(boundaryPoints)
-    loss = defPINNLossPIML_w_AD(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
+    loss = defPINNLossPIML_w_AD_LDG(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
                                     eps = 0.02,deflationLossPoints = deflationLossPoints, deflationLossCoeff=deflationCoefficient, alpha = alpha, beta = beta, delta = delta)
 
     for epoch in tqdm(range(epochs)):
@@ -83,7 +83,7 @@ def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
         modelOutBoundary = None
         if useBoundaryLossTerm:
             modelOutBoundary = model(boundaryPoints)
-        loss = defPINNLossPIML_w_AD(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
+        loss = defPINNLossPIML_w_AD_LDG(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
                                     eps = 0.02,deflationLossPoints = deflationLossPoints, deflationLossCoeff=deflationCoefficient, alpha = alpha, beta = beta, delta = delta)
 
 
@@ -137,7 +137,7 @@ def train(  model: two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
     modelOutBoundary = None
     if useBoundaryLossTerm:
         modelOutBoundary = model(boundaryPoints)
-    loss = defPINNLossPIML_w_AD(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
+    loss = defPINNLossPIML_w_AD_LDG(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
                                     eps = 0.02,deflationLossPoints = deflationLossPoints, deflationLossCoeff=deflationCoefficient, alpha = alpha, beta = beta, delta = delta)
 
 

@@ -3,7 +3,7 @@ from config import *
 import torch
 from pathlib import PurePath
 
-pathSavePictures = PurePath(plotFolder, "deflationPINNTest")
+pathSavePictures = PurePath(plotFolder, "LDG")
 
 
 def plot_Q11_Q12(model, grid_N, showPlot = False, saveName:str = "Reduced2DimLDG_Results" ):

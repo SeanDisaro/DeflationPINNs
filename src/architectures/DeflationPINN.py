@@ -2,15 +2,12 @@ from torch import nn
 import deepxde as dde
 from typing import Callable, Tuple
 import torch
+from .SwiGLU import *
 
 
-
-class two_dim_DefPINN(nn.Module):
+class two_dim_2_two_dim_DefPINN(nn.Module):
     """
-    This model is a Deflation Diffusion DeepONet; The dimension of the out put
-    is 2 and it outputs on top all the derivatives of the two outputs up to order 2 which we need for the laplacians of the components.
-    Furthermore, we output the branch features, since we want to reuse those for autoregression.
-    Thus the total number of outputs of this model is 11.
+    This model is a Deflation Diffusion DeepONet; The dimension of the output is 2.
     """
     def __init__(   self,
                     numSolutions: int,
@@ -25,6 +22,7 @@ class two_dim_DefPINN(nn.Module):
                     DirichletConditionFunc2: Callable[[torch.Tensor], torch.Tensor] = None
                     ):
         super().__init__()
+        
         self.activationFunction = activationFunction
         self.numBranchFeatures = numBranchFeatures
         self.geom = geom
@@ -35,7 +33,7 @@ class two_dim_DefPINN(nn.Module):
         self.DirichletConditionFunc2 = DirichletConditionFunc2
         self.trunk_layer = trunk_layer
 
-
+        
 
 
         self.trunkNet_Lin        =  (     
@@ -81,13 +79,13 @@ class two_dim_DefPINN(nn.Module):
 
 
         batchSize = trunkOut.shape[0]
-        branchTiledFeatures = []
+        # branchTiledFeatures = []
 
         out1, out2 = [],[]
 
         for i in range(self.numSolutions):
             tiledBranchAux = torch.tile(branchOut[i], (batchSize,1))
-            branchTiledFeatures.append(tiledBranchAux )
+            # branchTiledFeatures.append(tiledBranchAux )
             totalOutAux = trunkOut*tiledBranchAux
 
             out1.       append( ( torch.sum(totalOutAux[:,                         :   self.numBranchFeatures], dim = 1) + self.deepONet_biases[0]).view(-1,1) )
@@ -109,5 +107,142 @@ class two_dim_DefPINN(nn.Module):
                     out2[idxSol] = out2[idxSol] +boundaryExtension2
 
         dic = {"out1": out1, "out2": out2}
+
+        return dic
+    
+
+
+
+
+class one_dim_DefPINN(nn.Module):
+    """
+    This model is a Deflation Diffusion DeepONet; The dimension of the output is 1. Input dimension is 1.
+    """
+    def __init__(   self,
+                    numSolutions: int,
+                    numBranchFeatures: int,
+                    trunk_layer: int,
+                    trunk_width: int,
+                    activationFunction: Callable[[torch.Tensor], torch.Tensor],
+                    DirichletHardConstraint: bool,
+                    skipConnection: bool = False,
+                    useSwiGLU: bool = True,
+                    fourierFeatures:bool = True,
+                    DirichletConstAt1: float = -1., # the first value is a coordinate and the second is the value the funciton should have at that coordinate
+                    DirichletConstAt2: float = 1.,
+                    DirichletConstValLeft:float = 0,
+                    DirichletConstValRight:float = 0,
+                    ):
+        
+        super().__init__()
+        
+        self.activationFunction = activationFunction
+        self.numBranchFeatures = numBranchFeatures
+        self.DirichletHardConstraint = DirichletHardConstraint
+        self.fourierFeatures = fourierFeatures
+        self.skipConnection = skipConnection
+        self.numSolutions = numSolutions
+        self.trunk_layer = trunk_layer
+        self.useSwiGLU = useSwiGLU
+
+        self.boundaryParam1 = (DirichletConstValLeft - DirichletConstValRight)/( DirichletConstAt1 - DirichletConstAt2) #(DirichletConstValLeft - DirichletConstValRight + DirichletConstAt2**2 - DirichletConstAt1**2)/( DirichletConstAt1 - DirichletConstAt2)
+        self.boundaryParam2 = DirichletConstValRight - self.boundaryParam1*DirichletConstAt2 #DirichletConstValLeft - DirichletConstAt1 **2 - DirichletConstAt1*self.boundaryParam1
+        self.DirichletConstAt1 = DirichletConstAt1
+        self.DirichletConstAt2 = DirichletConstAt2
+        mid = (self.DirichletConstAt1 + self.DirichletConstAt2)/2
+        self.DirichletRegularizationConstant = ( mid- self.DirichletConstAt1)*(mid- self.DirichletConstAt2)
+
+        
+        if fourierFeatures:
+            multFourierFeatures = 3
+
+        else:
+            multFourierFeatures = 1
+
+        if useSwiGLU:
+            self.swigluActivationFunctions = [SwiGLUFFN(d_model = trunk_width  , d_ff=int((2/3) * 4 * trunk_width)) for _ in  range(trunk_layer)]
+
+        self.trunkNet_Lin        =  (     
+                                      [nn.Linear(1,trunk_width)]
+                                    + [nn.Linear(trunk_width, trunk_width) for i in range(max(trunk_layer-1,0))]
+                                    + [nn.Linear(trunk_width, multFourierFeatures * numBranchFeatures)]
+                                    )
+        if fourierFeatures:
+            self.fourierNetSin = nn.Linear(numBranchFeatures, numBranchFeatures)
+            self.fourierNetCos = nn.Linear(numBranchFeatures, numBranchFeatures)
+        
+        for idx,module in enumerate(self.trunkNet_Lin):
+            self.add_module(f"trunkNet_Lin_{idx}", module)
+
+
+        self.branchFeatures =   nn.ParameterList([nn.Parameter(torch.randn((multFourierFeatures * numBranchFeatures))) for i in range( numSolutions )])
+
+  
+
+        self.deepONet_biases     =    nn.Parameter(torch.randn(1))
+
+    def trunk(self, x: torch.Tensor)->torch.Tensor:
+        out = torch.zeros_like(x, device= x.device) + x
+        for i in range(self.trunk_layer):
+            skipConn = out.clone()
+            if self.useSwiGLU:
+                out = self.swigluActivationFunctions[i].forward(self.trunkNet_Lin[i](out))
+            else:
+                out = self.activationFunction(self.trunkNet_Lin[i](out))
+            if self.skipConnection and i != 0:
+                out = out + skipConn
+        
+        out = self.trunkNet_Lin[-1](out)
+
+        return out
+    
+
+    def fourierAugumentedLayer(self,x):
+        if self.fourierFeatures:
+            x1 = x[:,:self.numBranchFeatures]
+            frequencies = torch.linspace(1, 200,steps=self.numBranchFeatures, device=x.device, dtype=x.dtype)
+            x2 = torch.sin(frequencies*x[:,self.numBranchFeatures : 2*self.numBranchFeatures])
+            x3 = torch.cos(frequencies*x[:,2*self.numBranchFeatures : 3*self.numBranchFeatures])
+            x2 = self.fourierNetSin(x2)
+            x3 = self.fourierNetSin(x3)
+
+            return torch.cat((x1,x2,x3), dim = 1 )
+        else:
+            return x
+    
+
+    def forward(self,  x: torch.Tensor)->dict[str, list[torch.Tensor]]:
+        trunkOut = self.trunk(x)
+
+        branchOut = self.branchFeatures
+
+
+        batchSize = trunkOut.shape[0]
+        
+        vecOut = []
+        out = []
+
+        for i in range(self.numSolutions):
+            tiledBranchAux = torch.tile(branchOut[i], (batchSize,1))
+            totalOutAux = trunkOut*tiledBranchAux
+            vecOut.append( totalOutAux)
+
+            #out.append( ( torch.sum(totalOutAux[:,                         :   self.numBranchFeatures], dim = 1) + self.deepONet_biases[0]).view(-1,1) )
+
+
+        for i in range(self.numSolutions):
+            vecOut[i] = self.fourierAugumentedLayer(vecOut[i])
+            out.append( ( torch.sum(vecOut[i], dim = 1) + self.deepONet_biases[0]).view(-1,1) )
+
+
+        if self.DirichletHardConstraint:
+            for idxSol in range(self.numSolutions):
+                out[idxSol] = out[idxSol] *torch.tanh(10*(x- self.DirichletConstAt1))*torch.tanh(10*(x - self.DirichletConstAt2))
+                #out[idxSol] = out[idxSol] * ( x- self.DirichletConstAt1)*(x- self.DirichletConstAt2)/self.DirichletRegularizationConstant
+                out[idxSol] = out[idxSol] + x*self.boundaryParam1 +self.boundaryParam2 #x**2 + x*self.boundaryParam1 +self.boundaryParam2
+
+        
+
+        dic = {"out": out}
 
         return dic

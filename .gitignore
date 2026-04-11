@@ -4,3 +4,5 @@ src/architectures/__pycache__/
 Reduced2DimLDG/
 models/*.pkl
 ArasNotebooks/
+src/harmonicTrapezoidalExtension.py
+src/molifiedTrapezoidExtension.py
