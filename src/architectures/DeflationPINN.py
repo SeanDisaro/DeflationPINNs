@@ -36,15 +36,11 @@ class two_dim_2_two_dim_DefPINN(nn.Module):
         
 
 
-        self.trunkNet_Lin        =  (     
+        self.trunkNet_Lin        =  nn.ModuleList(
                                       [nn.Linear(2,trunk_width)]
                                     + [nn.Linear(trunk_width, trunk_width) for i in range(max(trunk_layer-1,0))]
                                     + [nn.Linear(trunk_width, numBranchFeatures*2)]
                                     )
-        
-        # add the modules manually to ensure, that all parameters appear in model paramters
-        for idx,module in enumerate(self.trunkNet_Lin):
-            self.add_module(f"trunkNet_Lin_{idx}", module)
 
 
         self.branchFeatures =   nn.ParameterList([nn.Parameter(torch.randn(( numBranchFeatures*2))) for i in range( numSolutions )])
@@ -160,9 +156,9 @@ class one_dim_DefPINN(nn.Module):
             multFourierFeatures = 1
 
         if useSwiGLU:
-            self.swigluActivationFunctions = [SwiGLUFFN(d_model = trunk_width  , d_ff=int((2/3) * 4 * trunk_width)) for _ in  range(trunk_layer)]
+            self.swigluActivationFunctions = nn.ModuleList([SwiGLUFFN(d_model = trunk_width  , d_ff=int((2/3) * 4 * trunk_width)) for _ in  range(trunk_layer)])
 
-        self.trunkNet_Lin        =  (     
+        self.trunkNet_Lin        =  nn.ModuleList(
                                       [nn.Linear(1,trunk_width)]
                                     + [nn.Linear(trunk_width, trunk_width) for i in range(max(trunk_layer-1,0))]
                                     + [nn.Linear(trunk_width, multFourierFeatures * numBranchFeatures)]
@@ -170,9 +166,6 @@ class one_dim_DefPINN(nn.Module):
         if fourierFeatures:
             self.fourierNetSin = nn.Linear(numBranchFeatures, numBranchFeatures)
             self.fourierNetCos = nn.Linear(numBranchFeatures, numBranchFeatures)
-        
-        for idx,module in enumerate(self.trunkNet_Lin):
-            self.add_module(f"trunkNet_Lin_{idx}", module)
 
 
         self.branchFeatures =   nn.ParameterList([nn.Parameter(torch.randn((multFourierFeatures * numBranchFeatures))) for i in range( numSolutions )])
@@ -200,7 +193,7 @@ class one_dim_DefPINN(nn.Module):
     def fourierAugumentedLayer(self,x):
         if self.fourierFeatures:
             x1 = x[:,:self.numBranchFeatures]
-            frequencies = torch.linspace(1, 200,steps=self.numBranchFeatures, device=x.device, dtype=x.dtype)
+            frequencies = torch.linspace(1, 100,steps=self.numBranchFeatures, device=x.device, dtype=x.dtype)
             x2 = torch.sin(frequencies*x[:,self.numBranchFeatures : 2*self.numBranchFeatures])
             x3 = torch.cos(frequencies*x[:,2*self.numBranchFeatures : 3*self.numBranchFeatures])
             x2 = self.fourierNetSin(x2)
@@ -237,11 +230,107 @@ class one_dim_DefPINN(nn.Module):
 
         if self.DirichletHardConstraint:
             for idxSol in range(self.numSolutions):
-                out[idxSol] = out[idxSol] *torch.tanh(10*(x- self.DirichletConstAt1))*torch.tanh(10*(x - self.DirichletConstAt2))
-                #out[idxSol] = out[idxSol] * ( x- self.DirichletConstAt1)*(x- self.DirichletConstAt2)/self.DirichletRegularizationConstant
-                out[idxSol] = out[idxSol] + x*self.boundaryParam1 +self.boundaryParam2 #x**2 + x*self.boundaryParam1 +self.boundaryParam2
+                #out[idxSol] = out[idxSol] *torch.tanh(10*(x- self.DirichletConstAt1))*torch.tanh(10*(x - self.DirichletConstAt2))
+                out[idxSol] = out[idxSol] * 0.05*( x- self.DirichletConstAt1)*(x- self.DirichletConstAt2)/self.DirichletRegularizationConstant
+                out[idxSol] = out[idxSol] + x*self.boundaryParam1 +self.boundaryParam2 
 
         
+
+        dic = {"out": out}
+
+        return dic
+    
+
+
+class two_dim_2_one_dim_DefPINN(nn.Module):
+    """
+    This model is a Deflation Diffusion DeepONet; The dimension of the output is 2.
+    """
+    def __init__(   self,
+                    numSolutions: int,
+                    numBranchFeatures: int,
+                    trunk_layer: int,
+                    trunk_width: int,
+                    activationFunction: Callable[[torch.Tensor], torch.Tensor],
+                    geom: dde.geometry.geometry.Geometry,
+                    DirichletHardConstraint: bool,
+                    skipConnection: bool = False,
+                    r_function = None,
+                    DirichletConditionFunc: Callable[[torch.Tensor], torch.Tensor] = None,
+                    ):
+        super().__init__()
+        
+        self.activationFunction = activationFunction
+        self.numBranchFeatures = numBranchFeatures
+        self.geom = geom
+        self.DirichletHardConstraint = DirichletHardConstraint
+        self.skipConnection = skipConnection
+        self.numSolutions = numSolutions
+        self.DirichletConditionFunc = DirichletConditionFunc
+        self.trunk_layer = trunk_layer
+        if not r_function:
+            if geom:
+                self.r_function = lambda x: self.geom.boundary_constraint_factor(x, smoothness="Cinf")
+        else:
+            self.r_function = r_function
+
+        
+
+
+        self.trunkNet_Lin        =  nn.ModuleList(
+                                      [nn.Linear(2,trunk_width)]
+                                    + [nn.Linear(trunk_width, trunk_width) for i in range(max(trunk_layer-1,0))]
+                                    + [nn.Linear(trunk_width, numBranchFeatures)]
+                                    )
+
+
+        self.branchFeatures =   nn.ParameterList([nn.Parameter(torch.randn(( numBranchFeatures))) for i in range( numSolutions )])
+
+
+
+        self.deepONet_biases     =    nn.Parameter(torch.randn(1))
+
+    def trunk(self, x: torch.Tensor)->torch.Tensor:
+        out = torch.zeros_like(x, device= x.device) + x
+        for i in range(self.trunk_layer):
+            skipConn = out.clone()
+            out = self.activationFunction(self.trunkNet_Lin[i](out))
+            if self.skipConnection and i != 0:
+                out = out + skipConn
+        
+        out = self.trunkNet_Lin[-1](out)
+
+        return out
+    
+
+
+    
+
+    def forward(self,  x: torch.Tensor)->dict[str, list[torch.Tensor]]:
+        trunkOut = self.trunk(x)
+
+        branchOut = self.branchFeatures
+
+
+        batchSize = trunkOut.shape[0]
+
+
+        out= []
+
+        for i in range(self.numSolutions):
+            tiledBranchAux = torch.tile(branchOut[i], (batchSize,1))
+            totalOutAux = trunkOut*tiledBranchAux
+
+            out.       append( ( torch.sum(totalOutAux[:,                         :   self.numBranchFeatures], dim = 1) + self.deepONet_biases[0]).view(-1,1) )
+
+
+        if self.DirichletHardConstraint:
+            for idxSol in range(self.numSolutions):
+                out[idxSol] = out[idxSol] * self.r_function(x)
+                if self.DirichletConditionFunc != None:
+                    boundaryExtension = self.DirichletConditionFunc(x).view(-1,1)
+                    out[idxSol] = out[idxSol] + boundaryExtension
+
 
         dic = {"out": out}
 

@@ -8,7 +8,7 @@ import numpy as np
 pathSavePictures = PurePath(plotFolder, "OneD_reaction")
 
 def plotSolutions(model, grid_N, saveName = "reactionDiffPlot", showPlot = False, omega= 6):
-    points = torch.linspace(-1.0, 1.0, grid_N, device="cuda").view(-1,1)
+    points = torch.linspace(-1.0, 1.0, grid_N, device=MY_DEVICE).view(-1,1)
 
     modelOut = model( points)
 
@@ -30,7 +30,7 @@ def plotSolutions(model, grid_N, saveName = "reactionDiffPlot", showPlot = False
                 )
             ax[i%2, i//2].plot(
                 x_np,
-                trueSol, c = "red", 
+                trueSol, c = "green", 
                 )
         
 
@@ -44,7 +44,7 @@ def plotSolutions(model, grid_N, saveName = "reactionDiffPlot", showPlot = False
                 )
             ax[i].plot(
                 x_np,
-                trueSol, c = "red", 
+                trueSol, c = "green", 
                 )
         
     fig.savefig(path)
@@ -55,7 +55,7 @@ def plotSolutions(model, grid_N, saveName = "reactionDiffPlot", showPlot = False
 
 
 def plot_piml_Errors(model, grid_N, saveName = "reactionDiffPlot", showPlot = False, omega = 6):
-    points = torch.linspace(-1.0, 1.0, grid_N, device="cuda").view(-1,1)
+    points = torch.linspace(-1.0, 1.0, grid_N, device=MY_DEVICE).view(-1,1)
     points.requires_grad = True
     modelOut = model( points)
 
@@ -66,9 +66,9 @@ def plot_piml_Errors(model, grid_N, saveName = "reactionDiffPlot", showPlot = Fa
     piml_errors = []
     batchSize = points.shape[0]
     for i in range(n):
-        u_x = torch.autograd.grad(u[i].view(-1,1), points, torch.ones((batchSize, 1), requires_grad = True).to("cuda"),allow_unused=True,create_graph=True)[0]
+        u_x = torch.autograd.grad(u[i].view(-1,1), points, torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),allow_unused=True,create_graph=True)[0]
 
-        u_xx = torch.autograd.grad(u_x[:, 0].view(-1,1), points,torch.ones((batchSize, 1), requires_grad = True).to("cuda"), allow_unused=True, create_graph=True)[0][:,0]
+        u_xx = torch.autograd.grad(u_x[:, 0].view(-1,1), points,torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE), allow_unused=True, create_graph=True)[0][:,0]
         u_xx_Arr.append(0.01*u_xx.view(-1,1))
         tanh_Arr.append(0.7*torch.tanh(u[i]))
         new_PINNLoss = 0.01*u_xx.view(-1,1) + 0.7*torch.tanh(u[i]) - sourceTerm(points, omega= omega)
@@ -89,18 +89,18 @@ def plot_piml_Errors(model, grid_N, saveName = "reactionDiffPlot", showPlot = Fa
                 x_np,                             
                 piml_errors[i][:,0].detach().cpu().numpy(), c = "red", 
                 )
-            ax[i%2, i//2].plot(
-                x_np,                             
-                u_xx_Arr[i][:,0].detach().cpu().numpy(), c = "blue", 
-                )
-            ax[i%2, i//2].plot(
-                x_np,                             
-                tanh_Arr[i][:,0].detach().cpu().numpy(), c = "purple", 
-                )
-            ax[i%2, i//2].plot(
-                x_np,                             
-                sourceTerm(points, omega= omega)[:,0].detach().cpu().numpy(), c = "brown", 
-                )
+            # ax[i%2, i//2].plot(
+            #     x_np,                             
+            #     u_xx_Arr[i][:,0].detach().cpu().numpy(), c = "blue", 
+            #     )
+            # ax[i%2, i//2].plot(
+            #     x_np,                             
+            #     tanh_Arr[i][:,0].detach().cpu().numpy(), c = "purple", 
+            #     )
+            # ax[i%2, i//2].plot(
+            #     x_np,                             
+            #     sourceTerm(points, omega= omega)[:,0].detach().cpu().numpy(), c = "brown", 
+            #     )
 
     else:
         for i in range(n):
@@ -110,18 +110,18 @@ def plot_piml_Errors(model, grid_N, saveName = "reactionDiffPlot", showPlot = Fa
                 piml_errors[i][:,0].detach().cpu().numpy(), c = "red", 
 
                 )
-            ax[i].plot(
-                x_np,                             
-                u_xx_Arr[i][:,0].detach().cpu().numpy(), c = "blue", 
-                )
-            ax[i].plot(
-                x_np,                             
-                tanh_Arr[i][:,0].detach().cpu().numpy(), c = "purple", 
-                )
-            ax[i].plot(
-                x_np,                             
-                sourceTerm(points, omega= omega)[:,0].detach().cpu().numpy(), c = "brown", 
-                )
+            # ax[i].plot(
+            #     x_np,                             
+            #     u_xx_Arr[i][:,0].detach().cpu().numpy(), c = "blue", 
+            #     )
+            # ax[i].plot(
+            #     x_np,                             
+            #     tanh_Arr[i][:,0].detach().cpu().numpy(), c = "purple", 
+            #     )
+            # ax[i].plot(
+            #     x_np,                             
+            #     sourceTerm(points, omega= omega)[:,0].detach().cpu().numpy(), c = "brown", 
+            #     )
         
     fig.savefig(path)
     if showPlot:

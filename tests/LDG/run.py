@@ -8,6 +8,7 @@ from src.molifiedTrapezoidExtension import MollifiedTrapezoidExtension
 from tests.LDG.testing import plot_Q11_Q12, plot_nematic_director, plot_piml_Error
 import matplotlib.pyplot as plt
 from src.starDomainExtrapolation.starDomain import *
+from config import MY_DEVICE
 
 
 
@@ -19,7 +20,7 @@ def run():
     geom = dde.geometry.geometry_2d.Rectangle([0.,0.], [1.,1.])
 
     squareAsStarDom = HyperCuboid(2, torch.tensor([0.5,0.5]), torch.tensor([1.,1.]))
-    squareAsStarDom.updateDevice("cuda")
+    squareAsStarDom.updateDevice(MY_DEVICE)
 
     # n as in n x n grid
     n = 33
@@ -38,7 +39,7 @@ def run():
 
 
 
-    points= points.to("cuda")
+    points= points.to(MY_DEVICE)
 
 
     points.requires_grad = True
@@ -67,7 +68,7 @@ def run():
                     DirichletHardConstraint = True,
                     skipConnection = False,
                     DirichletConditionFunc1 = lambda input:  DCBoundaryExtension(squareAsStarDom,[input[:,0].view(-1,1), input[:,1].view(-1,1)], bfunc), 
-                    DirichletConditionFunc2 = lambda x: torch.zeros((x.shape[0],1),device="cuda:0")
+                    DirichletConditionFunc2 = lambda x: torch.zeros((x.shape[0],1),device=MY_DEVICE)
                     )
 
 	

@@ -2,6 +2,9 @@ import os
 from pathlib import Path, PurePath
 
 
+MY_DEVICE = "cuda:0"
+MY_DEVICE_IDX = int(MY_DEVICE[-1]) if MY_DEVICE[-1]. isnumeric() else -1
+
 repositoryPath: PurePath = os.getcwd()
 
 pathTrainedModels: PurePath = PurePath(repositoryPath, "models")

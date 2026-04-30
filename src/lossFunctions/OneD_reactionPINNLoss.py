@@ -2,6 +2,8 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from src.starDomainExtrapolation.starDomain import *
+from config import MY_DEVICE
+from config import MY_DEVICE
 
 
 def pimlLoss_w_AutoGrad_reaction(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, boundaryPoints:torch.Tensor = None, modelOutBoundary:dict[torch.Tensor] = None ,
@@ -19,13 +21,13 @@ def pimlLoss_w_AutoGrad_reaction(modelOut:dict[list[torch.Tensor]],x: torch.Tens
     Returns:
         torch.Tensor: PINN loss
     """
-    lossPDE = torch.tensor(0.)
+    lossPDE = torch.tensor(0., device=MY_DEVICE)
     u = modelOut["out"]
     batchSize = x.shape[0]
     for i in range(len(u)):
-        u_x = torch.autograd.grad(u[i].view(-1,1), x, torch.ones((batchSize, 1), requires_grad = True).to("cuda"),allow_unused=True,create_graph=True)[0]
+        u_x = torch.autograd.grad(u[i].view(-1,1), x, torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),allow_unused=True,create_graph=True)[0]
 
-        u_xx = torch.autograd.grad(u_x[:, 0].view(-1,1), x,torch.ones((batchSize, 1), requires_grad = True).to("cuda"), allow_unused=True, create_graph=True)[0][:,0]
+        u_xx = torch.autograd.grad(u_x[:, 0].view(-1,1), x,torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE), allow_unused=True, create_graph=True)[0][:,0]
 
         new_PINNLoss = 0.01*u_xx.view(-1,1) + 0.7*torch.tanh(u[i]) - sourceTerm(x, omega= omega)
 
@@ -35,7 +37,7 @@ def pimlLoss_w_AutoGrad_reaction(modelOut:dict[list[torch.Tensor]],x: torch.Tens
         # 0 on boundary points
         uB = modelOutBoundary["out"]
 
-        boundaryLoss = torch.tensor(0.)
+        boundaryLoss = torch.tensor(0., device=MY_DEVICE)
         for i in range(len(uB)):
             boundaryLoss = boundaryLoss +  torch.nanmean(torch.norm(uB[i] , dim = 1) **2)
         return  alpha* lossPDE + beta * boundaryLoss

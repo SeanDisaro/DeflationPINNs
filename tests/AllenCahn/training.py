@@ -1,6 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import StepLR
-from src.lossFunctions.DeflationPINNLoss import defPINNLossPIML_w_AD_reaction
+from src.lossFunctions.DeflationPINNLoss import defPINNLossPIML_w_AD_allenCahn
 from src.architectures.DeflationPINN import one_dim_DefPINN
 from typing import Tuple
 import matplotlib.pyplot as plt
@@ -11,10 +11,10 @@ import logging
 from config import *
 import dill as pickle
 
-pathSavePictures = PurePath(plotFolder, "OneD_reaction")
+pathSavePictures = PurePath(plotFolder, "AllenCahn")
 
 def train(  model: one_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints: torch.Tensor = None,
-            learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "DeflationPINN_reaction",
+            learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "DeflationPINN_AllenCahn",
             alpha:float = 1., beta:float = 0.1, delta:float = 1,omega =6,  deflationLossPoints: tuple[float,float] = (10000.,1.) , deflationCoefficient:float = 1., FrequencyReportLosses:int = 20, learningRateEpochPlotName:str = "Learning_Epoch_Plot", schedulder_StepSize = 4000, schedulder_gamma = 0.8)->one_dim_DefPINN:
     """
     This is the training funciton for the Deflation PINN model for the reaction diffusion eq. It returns the trained model and the feature list containing the solution functions, which can be used with the trained model.
@@ -50,7 +50,7 @@ def train(  model: one_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
     modelOutBoundary = None
     if useBoundaryLossTerm:
         modelOutBoundary = model(boundaryPoints)
-    loss = defPINNLossPIML_w_AD_reaction(  x=x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary ,
+    loss = defPINNLossPIML_w_AD_allenCahn(  x=x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary ,
                      deflationLossPoints = deflationLossPoints , alpha = alpha , beta = beta, delta= delta, omega = omega)
 
     for epoch in tqdm(range(epochs)):
@@ -64,7 +64,7 @@ def train(  model: one_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints
         modelOutBoundary = None
         if useBoundaryLossTerm:
             modelOutBoundary = model(boundaryPoints)
-        loss = defPINNLossPIML_w_AD_reaction(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
+        loss = defPINNLossPIML_w_AD_allenCahn(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
                                    deflationLossPoints = deflationLossPoints, alpha = alpha, beta = beta, delta = delta, omega= omega)
     
 

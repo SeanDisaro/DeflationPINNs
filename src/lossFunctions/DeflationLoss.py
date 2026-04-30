@@ -1,7 +1,8 @@
 import torch
+from config import MY_DEVICE
 
 
-def linearDeflationLoss_dictModel(modelOut:dict[list[torch.Tensor]], maxLoss:float=10000, maxDistance:float = 0.1, keyOutModel = "out")->torch.Tensor:
+def linearDeflationLoss_dictModel(modelOut:dict[list[torch.Tensor]], maxLoss:float=10000, maxDistance:float = 0.1, keyOutModel = "out", keyOutModel2 = None)->torch.Tensor:
     """Linear deflation function. We compute basically sum _i,j max(maxLoss - maxLoss/ maxDistance * dist(u_i, u_j), 0  )
 
     Args:
@@ -13,6 +14,8 @@ def linearDeflationLoss_dictModel(modelOut:dict[list[torch.Tensor]], maxLoss:flo
         torch.Tensor: Deflation Loss
     """
     out = modelOut[keyOutModel]
+    if keyOutModel2:
+        out2 = modelOut[keyOutModel2]
     n = len(out)
     m = maxLoss/maxDistance
     loss = torch.Tensor([0.]).to(out[0].device)
@@ -21,8 +24,12 @@ def linearDeflationLoss_dictModel(modelOut:dict[list[torch.Tensor]], maxLoss:flo
     for i in range(n):
         for j in range(n-1-i):
             difference_ij_1 = out[i] - out[i + j+1]
-            lossAux2 = torch.maximum((maxLoss - m* torch.nanmean(torch.norm(difference_ij_1 , dim = 1))) , torch.tensor(0.))
-            loss = loss + lossAux2
+            if keyOutModel2:
+                difference_ij_2 = out2[i] - out2[i + j+1]
+                lossAux = torch.maximum((maxLoss - m* torch.nanmean(torch.norm(difference_ij_1**2 + difference_ij_2**2, dim = 1))) , torch.tensor(0., device=MY_DEVICE))
+            else:
+                lossAux = torch.maximum((maxLoss - m* torch.nanmean(torch.norm(difference_ij_1 , dim = 1))) , torch.tensor(0., device=MY_DEVICE))
+            loss = loss + lossAux
     
     loss = 2*loss /(n* (n-1))
     return loss

@@ -6,3 +6,4 @@ models/*.pkl
 ArasNotebooks/
 src/harmonicTrapezoidalExtension.py
 src/molifiedTrapezoidExtension.py
+logs/

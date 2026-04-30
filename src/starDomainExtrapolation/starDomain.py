@@ -138,7 +138,7 @@ class Sphere(StarDomain):
 
 
     def radiusDomainFunciton(self, angles):
-        return torch.full((angles.shape[0],1), self.radius, device= self.device)
+        return torch.full((angles.shape[0],1), self.radius[0], device= self.device)
 
 
 

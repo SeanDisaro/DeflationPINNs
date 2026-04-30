@@ -41,6 +41,7 @@ def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boun
         Laplacian_2D_DefDifONet: Returns trained model and feature representation of the solution funcitons.
     """    
 
+    model = model.to(MY_DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr = learningRate)
     bestLoss = torch.inf
     
@@ -125,7 +126,7 @@ def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boun
         #load best model; pathTrainedModels is defined in config
         #model = torch.load(PurePath(pathTrainedModels, modelName +".pt")).to("cuda")
         with open(PurePath(pathTrainedModels, modelName +".pkl"), "rb") as f:
-            model = pickle.load(f).to("cuda:0")
+            model = pickle.load(f).to(MY_DEVICE)
 
 
     else:

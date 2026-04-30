@@ -3,6 +3,7 @@ import deepxde as dde
 import matplotlib.pyplot as plt
 import numpy as np
 from src.starDomainExtrapolation.starDomain import *
+from config import MY_DEVICE
 
 
 def pimlLoss_w_AutoGrad_LDG(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, boundaryPoints:torch.Tensor = None, modelOutBoundary:dict[list[torch.Tensor]] = None ,
@@ -21,33 +22,33 @@ def pimlLoss_w_AutoGrad_LDG(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, b
     Returns:
         torch.Tensor: PINN loss
     """
-    lossPDE = torch.tensor(0.)
+    lossPDE = torch.tensor(0., device=MY_DEVICE)
     out1 = modelOut["out1"]
     out2 = modelOut["out2"]
     batchSize = x.shape[0]
     for i in range(len(out1)):
         out1_AD = torch.autograd.grad(out1[i].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0]
         
         out2_AD = torch.autograd.grad(out2[i].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0]
         
         out1_AD_dxx = torch.autograd.grad(out1_AD[:, 0].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,0]
         
         out1_AD2_dyy = torch.autograd.grad(out1_AD[:, 1].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,1]
         
         out2_AD_dxx = torch.autograd.grad(out2_AD[:, 0].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,0]
         
         out2_AD2_dyy = torch.autograd.grad(out2_AD[:, 1].view(-1,1), x,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,1]
 
 
@@ -63,7 +64,7 @@ def pimlLoss_w_AutoGrad_LDG(modelOut:dict[list[torch.Tensor]],x: torch.Tensor, b
         out2B = modelOutBoundary["out2"]
         outTrue1 = boundaryFunctionExtension(boundaryPoints, 3*eps)
         outTrue2 = torch.zeros((boundaryPoints.shape[0], 1))
-        boundaryLoss = torch.tensor(0.)
+        boundaryLoss = torch.tensor(0., device=MY_DEVICE)
         for i in range(len(out1B)):
             boundaryLoss = boundaryLoss +  torch.nanmean(torch.norm(out1B[i] - outTrue1 , dim = 1)) + torch.nanmean(torch.norm(out2B[i] - outTrue2, dim = 1))
         return  alpha* lossPDE + beta * boundaryLoss

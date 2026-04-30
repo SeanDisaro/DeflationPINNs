@@ -8,11 +8,11 @@ pathSavePictures = PurePath(plotFolder, "LDG")
 
 def plot_Q11_Q12(model, grid_N, showPlot = False, saveName:str = "Reduced2DimLDG_Results" ):
     
-    xs = torch.linspace(0.0, 1.0, grid_N, device="cpu")
-    ys = torch.linspace(0.0, 1.0, grid_N, device="cpu")
+    xs = torch.linspace(0.0, 1.0, grid_N, device=MY_DEVICE)
+    ys = torch.linspace(0.0, 1.0, grid_N, device=MY_DEVICE)
 
     X, Y = torch.meshgrid(xs, ys, indexing='xy')
-    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to("cuda")
+    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to(MY_DEVICE)
 
     modelOut = model( jointInputVec)
 
@@ -58,11 +58,11 @@ def plot_Q11_Q12(model, grid_N, showPlot = False, saveName:str = "Reduced2DimLDG
 
 
 def plot_nematic_director(model, grid_N, showPlot = False, saveName:str = "Reduced2DimLDG_nematic_director" ):
-    xs = torch.linspace(0.0, 1.0, grid_N, device="cpu")
-    ys = torch.linspace(0.0, 1.0, grid_N, device="cpu")
+    xs = torch.linspace(0.0, 1.0, grid_N, device=MY_DEVICE)
+    ys = torch.linspace(0.0, 1.0, grid_N, device=MY_DEVICE)
 
     X, Y = torch.meshgrid(xs, ys, indexing='xy')
-    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to("cuda")
+    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to(MY_DEVICE)
 
     modelOut = model( jointInputVec)
 
@@ -117,11 +117,11 @@ def plot_nematic_director(model, grid_N, showPlot = False, saveName:str = "Reduc
 
 
 def plot_piml_Error(model, grid_N, showPlot = False, saveName:str = "Reduced2DimLDG_PIML_Errors" ):
-    xs = torch.linspace(0.0001, 0.9999, grid_N, device="cpu")
-    ys = torch.linspace(0.001, 0.9999, grid_N, device="cpu")
+    xs = torch.linspace(0.0001, 0.9999, grid_N, device=MY_DEVICE)
+    ys = torch.linspace(0.001, 0.9999, grid_N, device=MY_DEVICE)
     eps = 0.02
     X, Y = torch.meshgrid(xs, ys, indexing='xy')
-    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to("cuda")
+    jointInputVec = torch.cat((X.reshape(-1,1),Y.reshape(-1,1)) , dim = 1).to(MY_DEVICE)
     jointInputVec.requires_grad = True
     modelOut = model( jointInputVec)
 
@@ -133,27 +133,27 @@ def plot_piml_Error(model, grid_N, showPlot = False, saveName:str = "Reduced2Dim
     batchSize = jointInputVec.shape[0]
     for i in range(n):
         out1_AD = torch.autograd.grad(Q11[i].view(-1,1), jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0]
         
         out2_AD = torch.autograd.grad(Q12[i].view(-1,1),jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0]
         
         out1_AD_dxx = torch.autograd.grad(out1_AD[:, 0].view(-1,1), jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,0]
         
         out1_AD2_dyy = torch.autograd.grad(out1_AD[:, 1].view(-1,1), jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,1]
         
         out2_AD_dxx = torch.autograd.grad(out2_AD[:, 0].view(-1,1), jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,0]
         
         out2_AD2_dyy = torch.autograd.grad(out2_AD[:, 1].view(-1,1), jointInputVec,
-                                     torch.ones((batchSize, 1), requires_grad = True).to("cuda"),
+                                     torch.ones((batchSize, 1), requires_grad = True, device=MY_DEVICE),
                                        allow_unused=True, create_graph=True)[0][:,1]
 
         laplace_comp1 = out1_AD_dxx + out1_AD2_dyy
