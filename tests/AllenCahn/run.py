@@ -43,21 +43,21 @@ def run():
 
     #loss
     deflationLossPoints = (1.,0.4)
-    alpha = 1
-    delta = 100 
-    epochs = 200_000
+    alpha = 100
+    delta = 1 
+    epochs = 40_000
     learningRate = 1e-4
 
     # NN
-    numBranchFeatures = 16
-    trunk_layer = 1
-    trunk_width = 1000
+    numBranchFeatures = 32
+    trunk_layer = 6
+    trunk_width = 100
     activationFunction = torch.nn.Tanh()
 
 
     #scheduler
     gamma = 0.8
-    stepSize = 5000
+    stepSize = 2000
 
     #PINN
     omega = 6

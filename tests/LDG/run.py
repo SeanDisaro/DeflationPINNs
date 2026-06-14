@@ -23,7 +23,7 @@ def run():
     squareAsStarDom.updateDevice(MY_DEVICE)
 
     # n as in n x n grid
-    n = 33
+    n = 3#33
     safetySpace = 0.001
     # Generate linearly spaced points between 0 and 1
     x = torch.linspace(0+safetySpace, 1-safetySpace, n) 
@@ -49,12 +49,12 @@ def run():
 
 
 
-    deflationLossPoints = (1.,0.4) 
+    deflationLossPoints = (1.,0.9) 
 
     alpha = 0.01 
     delta = 100. 
 
-    epochs = 10000
+    epochs = 10#_000
 
 
     

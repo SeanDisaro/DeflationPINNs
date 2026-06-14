@@ -11,7 +11,7 @@ import logging
 from config import *
 import dill as pickle
 
-pathSavePictures = PurePath(plotFolder, "deflationPINNTest")
+pathSavePictures = PurePath(plotFolder, "LDG")
 
 def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boundaryPoints: torch.Tensor = None,
             learningRate:float  = 1e-4,loadBestModel:bool = False, showTrainingPlot:bool = True, modelName: str= "DeflationPINN",
@@ -71,7 +71,7 @@ def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boun
     if useBoundaryLossTerm:
         modelOutBoundary = model(boundaryPoints)
     loss = defPINNLossPIML_w_AD_LDG(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
-                                    eps = 0.02,deflationLossPoints = deflationLossPoints, deflationLossCoeff=deflationCoefficient, alpha = alpha, beta = beta, delta = delta)
+                                    eps = 0.02,deflationLossPoints = deflationLossPoints,  alpha = alpha, beta = beta, delta = delta)
 
     for epoch in tqdm(range(epochs)):
 
@@ -85,7 +85,7 @@ def train(  model: two_dim_2_two_dim_DefPINN, x: torch.Tensor, epochs: int, boun
         if useBoundaryLossTerm:
             modelOutBoundary = model(boundaryPoints)
         loss = defPINNLossPIML_w_AD_LDG(  x = x, modelOut = modelOut, boundaryPoints = boundaryPoints, modelOutBoundary = modelOutBoundary,
-                                    eps = 0.02,deflationLossPoints = deflationLossPoints, deflationLossCoeff=deflationCoefficient, alpha = alpha, beta = beta, delta = delta)
+                                    eps = 0.02,deflationLossPoints = deflationLossPoints,  alpha = alpha, beta = beta, delta = delta)
 
 
         #update best loss so far

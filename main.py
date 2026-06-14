@@ -8,4 +8,5 @@ from config import *
 if __name__ == "__main__":
     if MY_DEVICE_IDX > -1:
         torch.cuda.set_device(MY_DEVICE_IDX)
-    runAllenCahn()
+    runLDG()
+    # runAllenCahn()

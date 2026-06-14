@@ -46,13 +46,13 @@ def run():
 
     # NN
     numBranchFeatures = 8
-    trunk_layer = 1
-    trunk_width = 2000
-    activationFunction = cauchy_activation #torch.nn.Tanh(),
+    trunk_layer = 5
+    trunk_width = 60
+    activationFunction = torch.nn.Tanh(), # cauchy_activation #
     DirichletHardConstraint = True
     skipConnection = False
-    useSwiGLU=False
-    fourierFeatures=False
+    useSwiGLU = False
+    fourierFeatures = False
     DirichletConstAt1 = -1.
     DirichletConstAt2= 1.
     DirichletConstValLeft = (np.sin(-1.*omega))**3

@@ -26,7 +26,7 @@ def linearDeflationLoss_dictModel(modelOut:dict[list[torch.Tensor]], maxLoss:flo
             difference_ij_1 = out[i] - out[i + j+1]
             if keyOutModel2:
                 difference_ij_2 = out2[i] - out2[i + j+1]
-                lossAux = torch.maximum((maxLoss - m* torch.nanmean(torch.norm(difference_ij_1**2 + difference_ij_2**2, dim = 1))) , torch.tensor(0., device=MY_DEVICE))
+                lossAux = torch.maximum((maxLoss - m* torch.nanmean(difference_ij_1**2 + difference_ij_2**2)) , torch.tensor(0., device=MY_DEVICE))
             else:
                 lossAux = torch.maximum((maxLoss - m* torch.nanmean(torch.norm(difference_ij_1 , dim = 1))) , torch.tensor(0., device=MY_DEVICE))
             loss = loss + lossAux
