@@ -55,6 +55,19 @@ ________________________________________________________
 The files ending with `_zero.png` show what the random initialization of the model looks like the others show the results. This is only to show, that some training occured.
 For the evaluation of the results, check out the notebook `metricsAndPics4Paper.ipynb`.
 
+________________________________________________________
+
+`revision2_experiments` contains the code for the experiments added in the second revision of the paper: the mesh-converged finite-difference reference solver, the gradient-flow/Newton certification of basin membership, the Deflation--Deep-Ritz refinement (midpoint and Simpson quadrature), the Allen--Cahn benchmark on the unit disk, the convergence and deflation-variant studies, the restart-with-certification protocol, and the automated selection of d_min by bisection.
+
+```
+📦revision2_experiments
+ ┣ 📂harness      training + certification (discovery, Deep-Ritz, Allen-Cahn, flow censuses, d_min bisection)
+ ┣ 📂launchers    the exact run scripts of every experiment set reported in the revision
+ ┣ 📂analysis     error contours, L2/Linf/H1 norms and localization, wall certification, paper plots
+ ┗ 📜README.md    file-by-file mapping to the tables and figures of the revised manuscript
+```
+
+________________________________________________________
 
 ## Cite the paper
 

@@ -1,0 +1,70 @@
+"""Figure 1: final rel errors of runs J and J2 per state. Figure 2: the six
+solution fields of the J checkpoint (director quivers over |Q| maps)."""
+import os, sys
+sys.path.insert(0, os.getcwd()); sys.path.insert(0, os.path.expanduser("~/DeflationPINNs_rev/harness"))
+import numpy as np, torch
+import deepxde as dde
+from harness_ldg_delta import SmoothSixState
+
+RES = os.path.expanduser("~/DeflationPINNs_rev/results")
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+SURF, INK, INK2 = "#fcfcfb", "#0b0b0b", "#52514e"
+BLUE, ORANGE = "#2a78d6", "#eb6834"
+states = ["D1", "D2", "R1", "R2", "R3", "R4"]
+J  = {"D1": 0.024055, "D2": 0.022551, "R1": 0.020025, "R2": 0.018484, "R3": 0.018818, "R4": 0.020617}
+J2 = {"D1": 0.022312, "D2": 0.020965, "R1": 0.018744, "R2": 0.017481, "R3": 0.017805, "R4": 0.019226}
+
+fig, ax = plt.subplots(figsize=(8.6, 4.2), facecolor=SURF)
+ax.set_facecolor(SURF)
+xs = np.arange(6)
+ax.bar(xs - 0.19, [J[s] for s in states], 0.34, color=BLUE, edgecolor=SURF, linewidth=1.5, label="run J (DDR, midpoint 384$^2$)")
+ax.bar(xs + 0.19, [J2[s] for s in states], 0.34, color=ORANGE, edgecolor=SURF, linewidth=1.5, label="run J2 (continuation, last eval)")
+ax.axhline(0.01, color=INK2, lw=1, ls="--", alpha=0.7)
+ax.annotate("1% target", (5.45, 0.0104), fontsize=8.5, color=INK2, ha="right")
+ax.set_xticks(xs); ax.set_xticklabels(states, fontsize=10, color=INK)
+ax.set_ylim(0, 0.027)
+ax.set_title("Deflation–Deep-Ritz: final relative $L^2$ errors vs converged references", fontsize=11.5, color=INK, loc="left")
+ax.grid(axis="y", alpha=0.25, linewidth=0.6)
+ax.tick_params(colors=INK2, labelsize=9)
+for sp in ["top", "right"]: ax.spines[sp].set_visible(False)
+for sp in ["left", "bottom"]: ax.spines[sp].set_color(INK2)
+ax.legend(fontsize=8.5, frameon=False)
+fig.tight_layout()
+fig.savefig(os.path.join(RES, "J_J2_errors.png"), dpi=170, facecolor=SURF)
+
+# ---- solutions from the J checkpoint ----
+geom = dde.geometry.geometry_2d.Rectangle([0., 0.], [1., 1.])
+m = SmoothSixState(geom, 128, 3, 128, 16.0).double()
+m.load_state_dict(torch.load(os.path.join(RES, "ldg_J_ritz1pct.pt"), map_location="cpu"))
+m.eval()
+NAMES = {0: "R3", 1: "D2", 2: "R4", 3: "R2", 4: "R1", 5: "D1"}
+nq_grid, na = 129, 27  # heatmap grid, arrow grid
+gq = np.linspace(0, 1, nq_grid); Xq, Yq = np.meshgrid(gq, gq, indexing="xy")
+ga = np.linspace(0.02, 0.98, na); Xa, Ya = np.meshgrid(ga, ga, indexing="xy")
+pq = torch.tensor(np.stack([Xq.ravel(), Yq.ravel()], 1), dtype=torch.float64)
+pa = torch.tensor(np.stack([Xa.ravel(), Ya.ravel()], 1), dtype=torch.float64)
+order = sorted(range(6), key=lambda k: ["D1","D2","R1","R2","R3","R4"].index(NAMES[k]))
+fig, ax = plt.subplots(2, 3, figsize=(13.5, 8.8), facecolor=SURF)
+with torch.no_grad():
+    for i, k in enumerate(order):
+        a = ax[i // 3][i % 3]
+        q1h, q2h = m.fields(pq, k)
+        mod = np.sqrt(q1h.numpy() ** 2 + q2h.numpy() ** 2).reshape(nq_grid, nq_grid)
+        im = a.imshow(mod, origin="lower", extent=[0, 1, 0, 1], vmin=0, vmax=1.02, cmap="viridis", alpha=0.85)
+        q1a, q2a = m.fields(pa, k)
+        # director: angle = arg(Q11+iQ12)/2, headless line segments like the paper
+        th = 0.5 * np.arctan2(q2a.numpy().ravel(), q1a.numpy().ravel())
+        s = np.sqrt(np.sqrt(q1a.numpy().ravel() ** 2 + q2a.numpy().ravel() ** 2))
+        a.quiver(Xa.ravel(), Ya.ravel(), s * np.cos(th), s * np.sin(th),
+                 angles="xy", scale_units="xy", scale=38, width=0.003,
+                 headwidth=1, headlength=0, headaxislength=0, color="white", pivot="mid")
+        a.set_title(f"{NAMES[k]}  (branch {k})", fontsize=11, color=INK)
+        a.set_xticks([0, 1]); a.set_yticks([0, 1]); a.set_aspect("equal")
+        fig.colorbar(im, ax=a, shrink=0.8)
+fig.suptitle("Run J (Deflation–Deep-Ritz) solutions: director fields (white) over $|Q|$ (color), 1.8–2.4% from the converged states",
+             fontsize=12, color=INK, x=0.02, ha="left")
+fig.tight_layout(rect=[0, 0, 1, 0.94])
+fig.savefig(os.path.join(RES, "J_solutions.png"), dpi=150, facecolor=SURF)
+print("saved both")
